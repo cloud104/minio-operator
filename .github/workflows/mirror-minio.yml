@@ -1,0 +1,44 @@
+name: Mirror MinIO Image (Manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Versão da imagem do MinIO a espelhar (ex: RELEASE.2024-02-24T18-32-15Z)"
+        required: true
+        type: string
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to Google Artifact Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.GCR_REGISTRY }}
+          username: _json_key
+          password: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Pull image from Quay.io (MinIO)
+        run: |
+          echo "Baixando imagem: quay.io/minio/minio:${{ github.event.inputs.version }}"
+          docker pull quay.io/minio/minio:${{ github.event.inputs.version }}
+
+      - name: Tag image for GCR
+        run: |
+          TARGET="${{ secrets.GCR_REGISTRY }}/minio/minio:${{ github.event.inputs.version }}"
+          echo "Marcando imagem como: $TARGET"
+          docker tag quay.io/minio/minio:${{ github.event.inputs.version }} $TARGET
+
+      - name: Push image to GCR
+        run: |
+          TARGET="${{ secrets.GCR_REGISTRY }}/minio/minio:${{ github.event.inputs.version }}"
+          echo "Enviando imagem para: $TARGET"
+          docker push $TARGET
+
+      - name: Done
+        run: echo "Imagem espelhada com sucesso!"
