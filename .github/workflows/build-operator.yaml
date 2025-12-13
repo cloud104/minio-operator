@@ -24,7 +24,7 @@ jobs:
         with:
           registry: ${{ secrets.GCR_REGISTRY }}
           username: _json_key
-          password: ${{ secrets.GCR_JSON_KEY }}
+          password: ${{ secrets.GCP_SA_KEY }}
 
       - name: Build image
         run: |
